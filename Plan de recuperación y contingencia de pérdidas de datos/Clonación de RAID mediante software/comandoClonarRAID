@@ -1,0 +1,120 @@
+	Backup :
+	Realizarcopia del RAID 1 con datos
+		mdadm –-stop/dev/md0 //Paramos el raid para poder realizar la copia
+		partimage -z1 -o-d -f3 -b save /dev/sda1 backup_sda1
+		partimage -z1 -o-d -f3 -b save /dev/sdb1 backup_sdb1
+	Con fsarchiver no sirve
+	Copiamosel MBR y tabla de particionesMBR (Bootloader y Tabla particiones primarias):
+		dd if=/dev/sda of=backup_sda_MBR.dd bs=512 count=1
+		dd if=/dev/sdb of=backup_sdb_MBR.dd bs=512 count=1
+
+	Tabla de partición extendida:
+		sfdisk -d /dev/sda > backup_sda.sfdisk
+		sfdisk -d /dev/sdb > backup_sdb.sfdisk
+	Copiamos supeblock RAIDs
+	Info de los tamañode superblock RAID https://raid.wiki.kernel.org/index.php/RAID_superblock_formats
+	Se puede clonarmenos de 512 pero con 512(Seria raid de 128 discos)
+	Buscar ubicación de superblock
+		OFFSET_MD0=$(mdadm -E /dev/sda1 | grep "Super Offset" | cut -d " " -f 7)
+		OFFSET_MD1=$(mdadm -E /dev/sda5 | grep "Super Offset" | cut -d " " -f 7) 
+	Clonar superblock
+	Del raid md0
+	dd if=/dev/sda1 of=sda1_superblock.dd count=1 bs=512 skip=$OFFSET_MD0
+	dd if=/dev/sdb1 of=sdb1_superblock.dd count=1 bs=512 skip=$OFFSET_MD0
+	Del raid md1
+	dd if=/dev/sda5 of=sda5_superblock.dd count=1 bs=512 skip=$OFFSET_MD1
+	dd if=/dev/sdb5 of=sdb5_superblock.dd count=1 bs=512 skip=$OFFSET_MD1
+	Guardamosubicación superblock y uuid de swap
+	for i in $(blkid /dev/md1); do case "$i" in ; UUID*) echo "$i" |sed "s/UUID/UUID_MD1/g" > uuid_md1 ;; esac; done
+	for i in $(blkid /dev/md1); do case "$i" in  LABEL*) echo "$i" | sed "s/LABEL/LABEL_MD1/g" > label_md1 ;; esac; done
+	echo $OFFSET_MD1 > offset_superblock_md1
+	echo $OFFSET_MD0 > offset_superblock_md0
+
+Restaurar:
+	Restauramosel MBR y tabla de particiones
+	MBR (Bootloader y Tabla particionesprimarias):
+		dd if=backup_sda_MBR.dd of=/dev/sda bs=512 count=1 
+		dd if=backup_sdb_MBR.dd of=/dev/sdb bs=512 count=1
+	Tabla de particioón extendida:
+		sfdisk /dev/sda < backup_sda.sfdisk
+		sfdisk /dev/sdb < backup_sdb.sfdisk
+	Restauramosdatos RAID 1 con datos:
+		partimage -f3 -brestore /dev/sda1 backup_sda1
+		partimage -f3 -brestore /dev/sdb1 backup_sdb1
+	Restauramos superblock:    
+	Del raid md0
+	OFFSET_MD0=$(cat offset_superblock_md0)
+		dd of=/dev/sda1 if=sda1_superblock.dd count=1 bs=512 seek=$OFFSET_MD0
+		dd of=/dev/sdb1 if=sdb1_superblock.dd count=1 bs=512 seek=$OFFSET_MD0    
+	Del raid md1
+		OFFSET_MD1=$(cat offset_superblock_md1)
+		dd of=/dev/sda5 if=sda5_superblock.dd count=1 bs=512 seek=$OFFSET_MD1
+		dd of=/dev/sdb5 if=sdb5_superblock.dd count=1 bs=512 seek=$OFFSET_MD1 
+	Restauramospartición swap:
+		mdadm --assemble/dev/md1 /dev/sda5 /dev/sdb5
+		. label_md1
+		mkswap -U $UUID_MD1 -L ${LABEL_MD1:-"raid1Swap"} /dev/md1
+
+======================= Para ext4 =======================
+Backup :
+	Realizar copia del RAID 1 con datos
+		fsarchiver -j2 -v savefs md0 /dev/md0
+	Copiamosel MBR y tabla de particionesMBR (Bootloader y Tabla particiones primarias):
+		dd if=/dev/sda of=backup_sda_MBR.dd bs=512 count=1
+		dd if=/dev/sdb of=backup_sdb_MBR.dd bs=512 count=1
+	Tabla de partición extendida:
+		sfdisk -d /dev/sda > backup_sda.sfdisk
+		sfdisk -d /dev/sdb > backup_sdb.sfdisk
+	Copiamos supeblock RAIDs
+	Info de los tamañode superblock RAID https://raid.wiki.kernel.org/index.php/RAID_superblock_formats
+	Se puede clonarmenos de 512 pero con 512(Seria raid de 128 discos)
+	Buscar ubicación de superblock
+		j=0; for i in $(mdadm -E /dev/sda1 | grep "Super Offset"); do j=$((j+1)); if [ "$j" = "4" ]; then echo "OFFSET_MD0=$i" > offset_superblock_md0 ; fi; done
+		. offset_superblock_md0
+		j=0; for i in $(mdadm -E /dev/sda2 | grep "Super Offset"); do j=$((j+1)); if [ "$j" = "4" ]; then echo "OFFSET_MD1=$i" > offset_superblock_md1 ; fi; done
+		. offset_superblock_md1
+	Clonar superblock
+	Del raid md0
+		dd if=/dev/sda1 of=sda1_superblock.dd count=1 bs=512 skip=$OFFSET_MD0
+		dd if=/dev/sdb1 of=sdb1_superblock.dd count=1 bs=512 skip=$OFFSET_MD0
+	Del raid md1
+		dd if=/dev/sda5 of=sda5_superblock.dd count=1 bs=512 skip=$OFFSET_MD1
+		dd if=/dev/sdb5 of=sdb5_superblock.dd count=1 bs=512 skip=$OFFSET_MD1
+	
+	Guardamosubicación uuid y label de swap
+		for i in $(blkid /dev/md1); do case "$i" in  UUID*) echo "$i" |sed "s/UUID/UUID_MD1/g" > uuid_md1 ;; esac; done
+		for i in $(blkid /dev/md1); do case "$i" in  LABEL*) echo "$i" | sed "s/LABEL/LABEL_MD1/g" > label_md1 ;; esac; done
+
+Restaurar:
+	Restauramosel MBR y tabla de particiones
+	MBR (Bootloader y Tabla particionesprimarias):
+		dd if=backup_sda_MBR.dd of=/dev/sda bs=512 count=1 
+		dd if=backup_sdb_MBR.dd of=/dev/sdb bs=512 count=1
+	Tabla de particioón extendida:
+		sfdisk /dev/sda < backup_sda.sfdisk
+		sfdisk /dev/sdb < backup_sdb.sfdisk
+	Restauramos superblock:    
+	Del raid md0
+		. offset_superblock_md0
+		dd of=/dev/sda1 if=sda1_superblock.dd count=1 bs=512 seek=$OFFSET_MD0
+		dd of=/dev/sdb1 if=sdb1_superblock.dd count=1 bs=512 seek=$OFFSET_MD0    
+	Del raid md1
+		. offset_superblock_md1
+		dd of=/dev/sda5 if=sda5_superblock.dd count=1 bs=512 seek=$OFFSET_MD1
+		dd of=/dev/sdb5 if=sdb5_superblock.dd count=1 bs=512 seek=$OFFSET_MD1 
+	Paramos raid si iniciaron:
+		mdadm -S --scan
+	Restauramospartición swap:
+		mdadm -A --run --update=resync /dev/md1 /dev/sda5 /dev/sdb5
+		. uuid_md1
+		. label_md1
+		mkswap -U $UUID_MD1 -L ${LABEL_MD1:-"raid1Swap"} /dev/md1
+ 	Restauramosdatos RAID 1 con datos:
+ 	    mdadm -A --run --update=resync /dev/md0 /dev/sda1 /dev/sdb1
+		fsarchiver -j2 -v restfs md0.fsa id=0,dest=/dev/md0
+	Despues habra que iniciar el sistema con un live como super_grub2_disk
+	y hacer grub-install /dev/md0
+		o
+		mkdir md0 ; mount /dev/md0 md0
+		grub-install --boot-directory=raid/boot/ /dev/sda
+		grub-install --boot-directory=raid/boot/ /dev/sdb	

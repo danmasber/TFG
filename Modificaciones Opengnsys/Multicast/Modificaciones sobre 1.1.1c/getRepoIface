@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This script takes the IPlocal variable of the repository
+# and returns the system interface
+# Alfredo Luque <aluque@soleta.eu>
+
+source /opt/opengnsys/etc/ogAdmRepo.cfg
+
+#Si recibe una ip devolvera la interfaz donde se encuantre es IP asignada
+if [ $# -eq 1 ]; then
+    IPlocal="$1"
+fi
+
+
+ip addr show | grep $IPlocal | cut -f2 | awk '{ print $NF }'

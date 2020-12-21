@@ -1,0 +1,15 @@
+Al crear mas servidores (server.conf ) hay que  systemctl daemon-reload
+
+Crear varios ca.cert y ca.key para cada subred y renombar segun el cliente que se quiera crear
+
+Cada servidor debe tener con un ca distinto
+
+En cada configuracion incluimos las rutas para enrutar las dos subredes a la interfaz del servidor que este en esa subred
+
+Si no se levanta  los tap se debe a que el bridge no esta declaro en shorewall como un zona
+
+No se puede conectar entre  cliente de la diferente openvpn
+
+En mac el usuario unimente puede tener como nombre dev tap  y como ajuste establece DNS alterno 2
+
+duplicate-cn permite el uso de mas de una conexion para el mismo cliente

@@ -1,0 +1,11 @@
+HOST 
+30 5 * * *	/opt/clienteGIT/actualizarCliente.sh
+0 4 * * *	/opt/servidorGIT/copiarFicherosCarpetasServidor.sh
+0 5 * * *	/opt/servidorGIT/realizarCommitRepositorioServidor.sh
+0 0 31 12 * /opt/servidorGIT/borrarCommitAnterioresAFecha.sh '-2 year ago'
+
+Maquina virtual
+0 2 * * *	/opt/servidorGIT/copiarFicherosCarpetasServidor.sh
+0 3 * * *	/opt/servidorGIT/realizarCommitRepositorioServidor.sh
+0 0 31 12 * /opt/servidorGIT/borrarCommitAnterioresAFecha.sh '-2 year ago'
+

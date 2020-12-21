@@ -1,0 +1,22 @@
+# encontrarse en modo rescue y con baud a 115200
+
+send "\n"
+expect "switch:"
+
+send "flash_init"
+expect "switch:"
+
+#TODO  cambiar esto por variable
+send "delete OLD"
+expect "Are you sure you want to delete "OLD" (y/n)?"
+send "y"
+
+send "copy xmodem: flash:FIRMWARE"
+
+print ""
+print "===Cerrando minicom==="
+print ""
+#Cerramos minicom
+! pkill -15 minicom 
+
+                                    

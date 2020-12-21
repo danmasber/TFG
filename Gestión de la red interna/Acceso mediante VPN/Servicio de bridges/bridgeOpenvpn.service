@@ -1,0 +1,19 @@
+[Unit]
+Description=Bridge para openvpn
+Before=openvpn.service
+#Si se tiene shorewall
+#Before=shorewall.service
+#Esto es por cada configuracio de vpn que necesite los bridge creado en levantarBridges.sh
+Before=openvpn@server_ltA.service
+Before=openvpn@server_ltB.service
+
+
+[Service]
+Type=oneshot
+ExecStart=/opt/brigdeScript/levantarBridges.sh
+RemainAfterExit=true
+ExecStop=/opt/brigdeScript/detenerBridges.sh
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

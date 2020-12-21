@@ -1,0 +1,35 @@
+#!/usr/bin/expect -f
+
+# Argumentos:
+#	0 Usuario manager del switch
+#	1 Contraseña del usuario manager
+#	2 IP del switch
+#	3 Puerto ssh del switch
+
+set USUARIO_MANAGER [lindex $argv 1];
+set CONTRASENA_MANAGER [lindex $argv 2];
+set IP_SWITCH [lindex $argv 3];
+set PORT_SWITCH [lindex $argv 4];
+
+spawn ssh -c 3des-cbc -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect eof
+
+send "\n" 
+expect "*#"
+send "configure\r"
+send "dhcp-server enable\r" 
+send "write memory\r"
+
+sleep 3

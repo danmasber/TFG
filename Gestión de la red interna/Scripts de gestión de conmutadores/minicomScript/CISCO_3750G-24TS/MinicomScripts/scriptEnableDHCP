@@ -1,0 +1,18 @@
+# Debe iniciarse en modo con privilegios (hacar enable antes)
+
+send "\n"
+
+expect "#"
+
+send "configure terminal"
+
+send "service dhcp"
+
+send "do copy  running-startup startup-config"
+expect "Destination filename [startup-config]?"
+
+send "\n"
+expect "#"
+
+send "exit"
+

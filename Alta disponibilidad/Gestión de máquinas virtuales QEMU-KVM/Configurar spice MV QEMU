@@ -1,0 +1,42 @@
+# Informacion sobre como configurar nuevo usb a redireccionar a la maquina virtual
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/virtualization_deployment_and_administration_guide/sect-guest_virtual_machine_device_configuration-usb_devices
+
+#Para habilitar tls
+https://ravada.readthedocs.io/en/latest/docs/spice_tls.html
+
+defaultMode='insecure' indica que no use tls
+
+ <graphics type='spice' port='5902' autoport='no' listen='0.0.0.0' passwd='password' defaultMode='insecure'>
+      <listen type='address' address='0.0.0.0'/>
+    </graphics>
+    <video>
+      <model type='qxl' ram='65536' vram='65536' vgamem='16384' heads='1' primary='yes'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </video>
+     <controller type='usb' index='0' model='nec-xhci'>
+        <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+      </controller>
+    <redirdev bus='usb' type='spicevmc'>
+      <address type='usb' bus='0' port='4'/>
+    </redirdev>
+    <redirdev bus='usb' type='spicevmc'>
+      <address type='usb' bus='0' port='1.1'/>
+    </redirdev>
+    <redirdev bus='usb' type='spicevmc'>
+      <address type='usb' bus='0' port='1.2'/>
+    </redirdev>
+    <redirdev bus='usb' type='spicevmc'>
+      <address type='usb' bus='0' port='1.3'/>
+    </redirdev>
+    <hub type='usb'>
+      <address type='usb' bus='0' port='1'/>
+    </hub>
+
+
+El multi usuario no funciona
+<domain type='kvm' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
+....
+ <qemu:commandline>
+    <qemu:env name='SPICE_DEBUG_ALLOW_MC' value='1'/>
+  </qemu:commandline>
+</domain>

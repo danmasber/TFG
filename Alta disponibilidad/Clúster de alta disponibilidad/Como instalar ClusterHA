@@ -1,0 +1,88 @@
+Instalar dependenciaa
+- Debian 
+		apt-get install -y pacemaker pcs psmisc policycoreutils-python-utils
+- Centos/Red Hat
+	yum install -y pacemaker pcs psmisc policycoreutils-python
+
+#Solo para prueba
+Deshabilitarmos SELinux, firewall e iptable para simplicar
+	setenforce 0	
+	iptables --flush
+	Modificar el fichero /etc/selinux/config
+		SELINUX=disabled
+		SELINUXTYPE=targeted
+
+- Centos/Red Hat
+	systemctl stop firewalld.service
+	systemctl disable firewalld.service
+#Solo para prueba
+
+Habilitamos el acceso
+iptables -A INPUT -p tcp --match multiport  --dport 2224,3121,5403,9929,21064 -j ACCEPT
+iptables -A INPUT -p udp --match multiport  --dport 5404,5405,9929 -j ACCEPT
+
+
+Habilitamos los servicios
+	systemctl start pcsd.service
+	systemctl enable pcsd.service
+
+Asignamos contraseña al usuario hacluster
+	passwd hacluster
+
+Modificamos el fichero /etc/hosts para añadir las maquinas. Cuidado con la IP que se ponga se accesible desde el otro nodo y que el nombre de resolucion sea unica en el fichero
+debe asegurarse de que el nombre de host que está utilizando en la definición de su clúster NO sea el nombre de host en la línea 127.0.0.1 en / etc / hosts.
+	servidor1 IP1
+	servidor2 IP2
+
+##########Configure corosync y cree un nuevo clúster
+Inicie sesión en cualquiera de los nodos del clúster y autentique al usuario "hacluster".
+- Debian 
+	pcs host auth servidor1 servidor2
+- Centos/Red Hat
+	pcs cluster auth servidor1 servidor2
+Creamos el cluster
+- Debian 
+	pcs cluster setup clusterHA servidor1 servidor2
+- Centos/Red Hat
+	pcs cluster setup  --name clusterHA servidor1 servidor2
+
+Inicamos el cluster entodos los nodos
+	pcs cluster start --all
+
+Comprabamos en cada nodo que se activa el servicio corosync
+		systemctl status corosync
+
+Compronabomos la conectibilidad del cluster.
+	pcs status corosync
+
+Vemos el estado del nodo
+	pcs status
+
+Habilitamos el backend de pscd para que el nodo se autoactive 
+	systemctl enable corosync
+	systemctl enable pacemaker
+
+Por defecto se habilita la politica STONITH que es necesario cuando el cluster comparta ficheros para que no se corrompa
+Para configurarlo https://clusterlabs.org/pacemaker/doc/en-US/Pacemaker/1.1/html/Clusters_from_Scratch/ch08.html
+
+Para nosotros lo desctivaremos
+	pcs property set stonith-enabled=false
+
+Configuramos para que en caso de existir un solo nodo levante los rescursos
+	pcs property set no-quorum-policy=ignore
+
+Configuramos para que en caso de existir un solo nodo levante los rescursos
+	pcs property set no-quorum-policy=ignore
+
+Configuramos para que el intervalo de comprobacion de cambio en el cluster sera cada 30s, impertante para resetear lo fallos	
+	 pcs property set cluster-recheck-interval=30s
+
+
+
+Crearamos un recursos que no pueda estar junto a un servicio que sea las reglas de iptables para redigir recurso para generar iptables ocf_heartbeat_anything  y un script que elimine reglas cuando enviemos SIGTERM  o SIGKILL
+https://github.com/ClusterLabs/resource-agents/blob/master/heartbeat/anything
+http://www.linux-ha.org/doc/dev-guides/_installing_and_packaging_resource_agents.html
+Para instalar ocf_heartbeat_anything
+	curl https://raw.githubusercontent.com/ClusterLabs/resource-agents/master/heartbeat/anything  > anything
+	cp anything /usr/lib/ocf/resource.d/heartbeat/
+	chmod  0755 /usr/lib/ocf/resource.d/heartbeat/anything

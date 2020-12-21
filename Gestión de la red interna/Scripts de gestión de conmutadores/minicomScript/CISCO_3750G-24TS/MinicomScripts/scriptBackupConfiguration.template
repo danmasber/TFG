@@ -1,0 +1,55 @@
+# Debe iniciarse en modo con privilegios (hacar enable antes)
+
+send "\n"
+
+expect "#"
+
+send "configure terminal"
+
+expect "#" 
+#Configuro un conexion temporal mediante ethernet temporal
+send "ip routing"
+send "vlan 1001"
+send "name vlanBackup"
+send "no shutdown"
+send "exit"
+
+send "interface vlan 1001"
+send "ip address IP_TFTP_CLIENTE IP_MASCARA_TFTP "
+send "no shutdown"
+send "exit"
+
+send "interface GigabitEthernet 1/0/PUERTO_SWITCH"
+send "switchport access vlan 1001"
+send "switchport mode access"
+send "no shutdown"
+send "exit"
+send "exit"
+sleep 3
+
+#Realizo la copia del fichero de configuracion sin la interfaz de red
+send "do copy startup-config tftp://IP_TFTP_SERVIDOR/BACKUP_CONFIGURCION_FECHA.txt"
+expect {
+	"IP_TFTP_SERVIDOR" send "\n"
+	"BACKUP_CONFIGURCION_FECHA" break
+}
+
+send "\n"
+expect "#"
+
+#Restauro la configuracion antes de añadir la conexion mediante ethernet temporal
+send "do copy startup-config running-startup"
+expect "Destination filename [running-startup]?"
+
+send "\n"
+expect "#"
+
+send "exit"
+
+#Salgo del script 
+print ""
+print "===Cerrando minicom==="
+print ""
+#Cerramos minicom
+! pkill -15 minicom 
+

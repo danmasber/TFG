@@ -1,0 +1,36 @@
+#!/usr/bin/expect -f
+
+# Argumentos:
+#	0 Backup de configuracion
+#	1 Usuario manager del switch
+#	2 Contraseña del usuario manager
+#	3 IP del switch
+#	4 Puerto ssh del switch
+
+set BACKUP [lindex $argv 0];
+set USUARIO_MANAGER [lindex $argv 1];
+set CONTRASENA_MANAGER [lindex $argv 2];
+set IP_SWITCH [lindex $argv 3];
+set PORT_SWITCH [lindex $argv 4];
+
+
+spawn scp -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH:startup-config $BACKUP
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect eof
+sleep 3
+
+set timeout -1
+spawn echo 'fin transferencia'
+expect "fin transferencia"
+

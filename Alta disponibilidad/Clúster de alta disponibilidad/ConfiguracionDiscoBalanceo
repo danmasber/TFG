@@ -1,0 +1,182 @@
+
+#############################################################################################
+########################## Configuramos DRDB ###############################################
+#############################################################################################
+
+############# Instalamos lo necesario  para usar drdb #############
+#Ambos nodos
+apt install drbd-utils
+
+############# Habilitamos el modulo drbd #############
+#Ambos nodos
+modprobe drbd
+
+############# Habilitamos que se incie al arrancar el modulo drbd #############
+#Ambos nodos
+
+echo drbd > /etc/modules-load.d/drbd.conf
+
+
+############# Creamos la configuracion en los nodos "nano /etc/drbd.d/recursos.res" #############
+#Ambos nodos
+	resource imagenes {
+	    meta-disk internal;
+	    device /dev/drbd1;
+	    disk /dev/sda3;
+
+	    syncer {
+	        	rate 80M;
+	        }
+	    net {
+	            allow-two-primaries;
+			    after-sb-0pri discard-zero-changes;
+	        	after-sb-1pri discard-secondary;
+	            after-sb-2pri disconnect;
+	        }
+	     startup {
+                become-primary-on both;
+            }
+
+	    on servidor1 { address 192.168.1.201:7789; }
+	    on servidor2 { address 192.168.1.202:7789; }
+	}
+
+	resource basedatos {
+	    meta-disk internal;
+	    device /dev/drbd2;
+	    disk /dev/sda6;
+
+	    syncer {
+	        	rate 80M;
+	        }
+	    net {
+	            allow-two-primaries;
+			    after-sb-0pri discard-zero-changes;
+	        	after-sb-1pri discard-secondary;
+	            after-sb-2pri disconnect;
+	        }
+	    startup {
+                become-primary-on both;
+            }
+
+	    on servidor1 { address 192.168.1.201:7790; }
+	    on servidor2 { address 192.168.1.202:7790; }
+	}
+
+	resource tftp {
+	    meta-disk internal;
+	    device /dev/drbd3;
+	    disk /dev/sda7;
+
+	    syncer {
+	        	rate 80M;
+	        }
+	    net {
+	            allow-two-primaries;
+			    after-sb-0pri discard-zero-changes;
+	        	after-sb-1pri discard-secondary;
+	            after-sb-2pri disconnect;
+	        }
+	    startup {
+                become-primary-on both;
+            }
+
+	    on servidor1 { address 192.168.1.201:7791; }
+	    on servidor2 { address 192.168.1.202:7791; }
+	}
+############# Configuramos iptables  #############
+#Ambos nodos
+iptables -A INPUT -p tcp --match multiport  --dport 7789,7790,7791 -j ACCEPT
+
+
+############# Ahora en uno de los nodos inicializamos los metadatos del disco #############
+# Debe estar la particiones sin formato  dd if=/dev/zero of=/dev/sda3 bs=1M count=1
+# Debe estar la particiones sin formato  dd if=/dev/zero of=/dev/sda6 bs=1M count=1
+# Debe estar la particiones sin formato  dd if=/dev/zero of=/dev/sda7 bs=1M count=1
+#Ambos nodos
+
+drbdadm create-md imagenes
+drbdadm create-md basedatos
+drbdadm create-md tftp
+
+############# Levantamos el recursos DRBD  #############
+#Ambos nodos
+
+drbdadm up imagenes
+drbdadm up basedatos
+drbdadm up tftp
+
+############# A continuación en /proc/drbd podremos ver como se ha levantado el recurso DRBD En esta caso incosistente #############
+cat /proc/drbd 
+
+############# Forzamos sobre escribir la info de un nodo sobre otro #############
+# Solo en uno
+drbdadm -- --overwrite-data-of-peer primary imagenes 
+drbdadm -- --overwrite-data-of-peer primary basedatos 
+drbdadm -- --overwrite-data-of-peer primary tftp 
+
+
+############# Forzamos que sea tambien primario este nodo #############
+#Nodo contrario 
+drbdadm primary imagenes	
+drbdadm primary basedatos	
+drbdadm primary tftp	
+
+
+############# Formateamos los discos creado #############
+# Solo en uno
+mkfs.ext3 /dev/drbd1
+mkfs.ext3 /dev/drbd2
+mkfs.ext3 /dev/drbd3
+
+
+############# habilitamos el servicio para que aranque al inciiar #############
+#Ambos nodos
+systemctl enable drbd
+
+
+############# Creamos los recurso para administrar los disco y su montaje #############
+# Solo en uno
+
+pcs resource create  DrbdImagenesFS Filesystem device="/dev/drbd1" directory="/opt/opengnsys/imagenes" fstype="ext3"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdImagenesFS
+    pcs resource meta DrbdImagenesFS migration-threshold=4
+    pcs resource meta DrbdImagenesFS failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdImagenesFS prefers  servidor1=1000 servidor2=0 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdImagenesFS
+    pcs resource meta DrbdImagenesFS migration-threshold=4
+    pcs resource meta DrbdImagenesFS failure-timeout=60
+
+pcs resource create  DrbdTFTPFS Filesystem device="/dev/drbd3" directory="/srv/tftp/" fstype="ext3"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdTFTPFS
+    pcs resource meta DrbdTFTPFS migration-threshold=4
+    pcs resource meta DrbdTFTPFS failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdTFTPFS prefers  servidor1=1000 servidor2=0 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdTFTPFS
+    pcs resource meta DrbdTFTPFS migration-threshold=4
+    pcs resource meta DrbdTFTPFS failure-timeout=60
+
+pcs resource create  DrbdBbddFS Filesystem device="/dev/drbd2" directory="/var/lib/mysql/" fstype="ext3"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdBbddFS
+    pcs resource meta DrbdBbddFS migration-threshold=4
+    pcs resource meta DrbdBbddFS failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdTFTPFS prefers  servidor1=1000 servidor2=0 
+
+
+
+
+
+
+https://blog.martinh.es/pacemaker-corosync-drbd-high-availability-de-tres-nodos-en-centos7/
+

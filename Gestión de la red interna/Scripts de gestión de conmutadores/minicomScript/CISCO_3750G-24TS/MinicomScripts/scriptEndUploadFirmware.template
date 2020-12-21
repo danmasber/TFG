@@ -1,0 +1,18 @@
+# encontrarse en modo rescue y con baud a 115200
+
+send "\n"
+expect "switch:"
+
+send "flash_init"
+expect "switch:"
+
+send "set BOOT flash:/FIRMWARE"
+send "set BOOTHLPR flash:/FIRMWARE"
+
+print ""
+print "===Cerrando minicom==="
+print ""
+#Cerramos minicom
+! pkill -15 minicom 
+
+                                    

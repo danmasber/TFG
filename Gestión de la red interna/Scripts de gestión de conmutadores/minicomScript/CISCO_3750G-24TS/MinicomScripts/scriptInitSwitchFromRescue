@@ -1,0 +1,16 @@
+# Debe ejecutarse en modo resucue
+
+#Desactivo el modo manual de arranque que permite entrar en el modo rescue 
+send "set MANUAL_BOOT no"
+
+#Reinicio para que se inicie el switch en modo normal
+send "reset"
+expect "Are you sure you want to reset the system (y/n)?"
+send "y"
+
+#Salgo del script 
+print ""
+print "===Cerrando minicom==="
+print ""
+#Cerramos minicom
+! pkill -15 minicom 

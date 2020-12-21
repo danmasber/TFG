@@ -1,0 +1,40 @@
+main:
+	send "\n"
+	gosub enableCopy
+
+goto main
+
+killMinicom:
+	print
+	print "===Cerrando minicom==="
+	print	
+	#Cerramos minicom
+	! pkill -15 minicom 
+
+enableCopy:
+	print
+	print "===Entrado enableCopy==="
+	print
+	send "\n"
+	send "enable"
+	expect {
+		"Username" send "USUARIO_MANAGER" 
+		"Password" send "PASSWORD_MANAGER"
+		">" 	   send "enable"
+		"#" 	   goto loadConfiguration
+		timeout 30 exit
+	}
+
+	print
+	print "===Salido enableCopy==="
+	print
+	return
+
+loadConfiguration:
+	print "===Entrado loadConfiguration==="
+	send "copy xmodem startup-config unix"
+	expect "may be reboot"
+	send "y"	
+	expect "Press"
+	send "\n"
+	goto killMinicom

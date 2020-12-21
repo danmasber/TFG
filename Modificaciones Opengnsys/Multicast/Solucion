@@ -1,0 +1,25 @@
+En opengnsys existe el problema que cuando tenemos mas de una interfaz el multicast no se va a enrutar correctamete siempre ira por la defecto.
+Para ello es necesario modificar el opengnsys para que de se pueda seleccionar la interfaz con la que realizar la comunicacion
+	- Modificar bin/sendFileMcast para que reciba como tercer parametro la IP que tiene como gateway el cliente
+	- sbin/ogAdmRepoAux Para que lea del cliente una parametro mas cuando solicite la conexion multicast y pasarlo bin/sendFileMcast
+	- bin/getRepoIface  Para que a partir de una IP parametro pueda determinar la interfaz
+	- client/lib/engine/bin/Protocol.lib en las funcion ogMcastRequest y ogMcastSyntax como direccion IP de la cual recibir multicast el resultado del comando 
+		ip route show 0.0.0.0/0 | cut -d\  -f3
+	- client/scripts/restoreImage para que espere un tiempo entre la peticion de multicast y el levantamiento del cliente para que el servidor este activo
+Tambien sera necesario que cada subred disponga de un puerto diferente para evistar conflicto a la hora de resturar en varias subred.
+
+Otra posible de error puede ser configurar la velocidad de la red por encima de la permitida o soportada en la red.
+La recomendacion es un 20% menos que la maxima de los enlaces y de esta menare evitar saturar la red o que se intente enviar a una velociad superior a la del enlace
+Nota: en opengnsys se configura a nivel de Mb/s
+
+
+####### Datos ##### 
+Para la determinar la interfaz que se usa para el multicast se hace uso del script  /opt/opengnsys/bin/getRepoIface, que devuelve la interfaz configurada en /opt/opengnsys/etc/ogAdmRepo.cfg.
+Esta interfaz es la usada para asociar el enviao multicast y difundir por ella el trafico tras la conexion de los clientes.
+A traves de la IP udp-sender elige la ip a la cual asociar el envio y recepcion de paquete(Importante si se tiene varias IP en la interfaz, siempre elegira a que configurada esticamente o mediante DHCP antes que aquellas configurada mendiante otro procedimiento como puede ser IPflotnate)
+
+Los cliente comporbaran si se esta abirto el puerto mediante el uso del siguiete comando
+ nmap -n -sU -p $PORTAUX $REPOIP
+
+Siendo $PORTAUX el puerto multicast mas 1 y $REPOIP la IP del repositorio. El problema de esta comprobacion en que no sirve si el udp-sender se asocia a otra IP de la interfaz o se tiene una virtual.
+

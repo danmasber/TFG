@@ -1,0 +1,9 @@
+/dev/sda
+- /dev/sda1 forma parte del RAID 1 boot 
+- /dev/sda2 forma parte del RAID 1 pv00 
+/dev/sdb
+- /dev/sdb1 forma parte del RAID 1 boot 
+- /dev/sdb2 forma parte del RAID 1 pv00 
+
+El raid pv00 forma parte del grupo LVM centos donde esta instalado el sistema operativo y una partcion swap
+El raid boot es donde esta instalado el boot del sistema operativo

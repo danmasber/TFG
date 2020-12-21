@@ -1,0 +1,109 @@
+
+.check_apagado {
+	position: relative;
+	background: linear-gradient(90deg,#F78181,#FE2E2E);
+}
+
+.check_encendido {
+	position: relative;
+	background: linear-gradient(90deg,#BCF5A9,#58FA82);
+}
+
+.check_enviarArchivos {
+    position: relative;
+    background: linear-gradient(90deg,#B58A65,#9A6850);
+}
+
+.check_enviarComando {
+    position: relative;
+    background: linear-gradient(90deg,#65A6b5,#1Af3f3);
+}
+
+.check_enviarProcedimiento {
+    position: relative;
+    background: linear-gradient(90deg,#e4e645,#f1f505);
+}
+
+.check_encendido input[type="checkbox"],
+.check_apagado input[type="checkbox"],
+.check_enviarArchivos input[type="checkbox"],
+.check_enviarComando input[type="checkbox"],
+.check_enviarProcedimiento input[type="checkbox"],
+.check_encendido label,
+.check_apagado label,
+.check_enviarArchivos label,
+.check_enviarComando label, 
+.check_enviarProcedimiento label,
+.check_encendido label::before, 
+.check_apagado label::before, 
+.check_enviarArchivos label::before, 
+.check_enviarComando label::before,
+.check_enviarProcedimiento label::before,
+.check_encendido label::after, 
+.check_apagado label::after, 
+.check_enviarArchivos label::after, 
+.check_enviarComando label::after,
+.check_enviarProcedimiento label::after,
+.check_encendido, 
+.check_apagado, 
+.check_enviarArchivos, 
+.check_enviarComando,
+.check_enviarProcedimiento{
+	display: inline-block;
+	border-radius: 1rem;
+}
+
+.check_encendido label ,
+.check_apagado label, 
+.check_enviarArchivos label, 
+.check_enviarComando label,
+.check_enviarProcedimiento label {
+	width: 1rem;
+	height: 1rem;
+	background: linear-gradient(90deg,#D6D2D2,#908787);
+	overflow: hidden;
+}
+
+.check_encendido input[type="checkbox"],
+.check_apagado input[type="checkbox"],
+.check_enviarArchivos input[type="checkbox"],
+.check_enviarComando input[type="checkbox"],
+.check_enviarProcedimiento input[type="checkbox"] {
+	position: absolute;
+	size: 2em;
+	opacity: 0;
+}
+
+.check_encendido input[type="checkbox"]:checked + label,
+.check_apagado input[type="checkbox"]:checked + label,
+.check_enviarArchivos input[type="checkbox"]:checked + label,
+.check_enviarComando input[type="checkbox"]:checked + label,
+.check_enviarProcedimiento input[type="checkbox"]:checked + label  {
+	background: transparent;
+}
+
+input[type="submit"],input[type="reset"],button {
+	border-radius: 10px;
+    color: black;
+    border: 2px solid #555555;
+    border: none;
+    padding: 4px 8px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    margin: 4px 2px;
+    -webkit-transition-duration: 0.4s; 
+    transition-duration: 0.4s;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover,input[type="reset"]:hover,button:hover {
+    background-color: #555555;
+    color: white;
+}
+
+select, select option {
+   background-color: #dddddd;
+   border: 3px solid #dddddd;
+   border-radius: 20px;
+}

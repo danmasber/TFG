@@ -1,0 +1,54 @@
+Carpeta Con_otro_usuario:
+ 	Es necesario intalar el gestor de ventana i3
+		Intalar i3 en centos, red hat y derivados
+			yum install -y epel-release
+			yum update -y && yum upgrade -y
+			yum install -y i3
+		Instalar i3 en no centos ni red hat ni derivados
+			apt install i3
+
+	Posibilidad de iniciar directamente en pantalla completa si se conoce las atajos de teclado de virtualBo
+
+Carpeta Con_VNC:
+	Debe esta configurado con vnc en el puerto 50000 
+	Para encriptar y desencriptar
+	Añadir em el archivo vmx
+	RemoteDisplay.vnc.enabled = "true"
+	RemoteDisplay.vnc.port = "50000"
+
+	RemoteDisplay.vnc.password = "Password"
+	
+	O modificar el script lanzarMaquina.sh la variable PUERTO_VNC para seleccionar otro puerto
+	No se usa virtualBox por que el protocolo que usa es RDP 
+	Cliente VNC -- usar vncviewer
+	Intalar vncviewer en centos, red hat y derivados
+		yum intall -y tigervnc
+	Intalar vncviewer en centos, red hat y derivados
+		apt install -y tigervnc-viewer tigervnc-common
+
+Carpeta Con_RDP:
+	Debe esta configurado con vnc en el puerto 50000 
+	Añadir em el archivo vbox en el elemento <Hardware>
+	 <RemoteDisplay enabled="true" authTimeout="2000" allowMultiConnection="true">
+       <VRDEProperties>
+           <Property name="TCP/Ports" value="50000"/>
+         </VRDEProperties>
+     </RemoteDisplay>
+
+	Cliente de RPD freerdp -- usar xfreerdp 
+	Intalar freerdp en centos, red hat y derivados
+		yum install -y freerdp 
+	Instalar freerdp en no centos ni red hat ni derivados
+		apt install -y freerdp2-x11
+
+	Se usa con virtualBox y el problema es que el puerto debe estar cerrado hacia fuera porque no se puede poner contraseña
+
+
+Informacion comun: 
+	Ubicaciar donde copiar servicio lanzarMaquina.service en  /etc/systemd/system/ con permisos 644 
+	Modificar todos los *.service para poner la ruta donde se aloje los script
+	Activar  servicio al incio del sistema :
+		systemctl enable lanzarMaquina.service
+
+	Iniciar servicio:
+		systemctl start lanzarMaquina.service

@@ -1,0 +1,37 @@
+Los siguientes script estan diseñado para usar con crontab:
+() Servidor
+	- borrarCommitAnterioresAFecha.sh Argumento cuanto tiempo retroceder para como punto de inicio del truncado 
+	- copiarFicherosCarpetasServidor.sh 
+	- realizarCommitRepositorioServidor.sh
+() Cliente
+	- actualizarCliente.sh 
+	- actualizarCliente.sh  
+	- copiarFicherosCarpetasCliente.sh
+	- realizarCommitRepositorioCliente.sh
+
+Los script de servidor usan configuracionRepo.cfg como fuente de las variables necesarias para actuar sobre el repositorio adecuado
+
+Contenido:
+USUARIO_REPOSITORIO="backup"
+CARPETA_REPOSITORIO="/repo/"
+NOMBRE_REPOSITORIO="Prueba"
+
+Los script de cliente usan configuracionRepoCliente.cfg como fuente de las variables necesarias para actuar sobre el repositorio adecuado
+
+Contenido:
+USUARIO_REPOSITORIO_LOCAL="backup"
+CARPETA_REPOSITORIO_LOCAL="/repoCliente"
+NOMBRE_REPOSITORIO="Prueba"
+DIRECCION_REPOSITORIO="servidor"
+CLAVE_SSH="/root/.ssh/claveSsh"
+
+Los ficheros repo_cliente.conf y repo.conf son mera informacion sobre los configurado,
+No es necesario usar configurarRepositorio.sh y configurarCliente.sh si se crean manualmente los ficheros configuracionRepo.cfg y configuracionRepoCliente.cfg respectivamente.
+
+El script configurarSshConexionConClavePublica.sh es usado para configurar la conexion ssh mediante clave publica para poder hacer uso de actualizarCliente.sh de forma no iterativa
+
+Para tener varios repositorio de GIT es necesario copiar los script en diferente carpetas con sus correspondiente  configuracionRepo.cfg y configuracionRepoCliente.cfg 
+
+El fichero ficherosYCarptasRepositorio.cfg  se usa para indicar al script copiarFicherosCarpetas.sh que archivos se desean mantener
+
+Importante antes de añadir nuevos archivos desde el cliente hay que llamar  a actualizarCliente.sh para evitar conflicto y si se hicera despues de actualizarCliente.sh  borraria todo los archivos añadidos

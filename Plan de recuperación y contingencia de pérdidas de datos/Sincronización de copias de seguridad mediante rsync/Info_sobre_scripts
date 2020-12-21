@@ -1,0 +1,21 @@
+El script hace uso de rsync y para la copia remota de ssh para conectarse al remoto
+
+Para el calculo de una suma de chequeo se hara uso de md5sum
+
+El scriptBackupCrearChecksumYConvertirInmutable.sh esta pensado para crear los checksum necesario para verificar la integridad de los fichero y hace que los ficheros que forman las diferentes carpetas paseen a ser inmutables. Hace uso de backupConfig.cfg para saber que carptetas debe realizarle el checksum y donde almacenarlo
+
+El scriptBackupRemoto.sh esta pensado para copiar de manera remota las carpetas generada mendiante scriptBackup.sh chequeando si ha habido modificaciones mediante los ckecksum, si existen modificaciones sobre el checksum no se copiara. Si el checksum almacenado en remoto y el que se calcula en el momento con las carpeta no coincide se cortara la copia en ese momento ademas se informara si localmente esta disponible esa carpeta con un checksum correcto
+
+Si se quiere copiar otros archivos que se encuentre en CARPETA_BACKUP hay que generar los checksum a mano de las carpetas nuevas con 
+	cd $CARPETA_BACKUP ; tar -cf - $nombre_nuevo | md5sum
+Siempre hay que estar en la carpeta de backup para realizar el checksum
+
+El calculo del checksum se puede hacer alatamente costoso ya sea por tamaño o por numero de archivos
+
+Ambos script estan pensado para que se añadan al crontab y el scriptBackupRemoto.sh esta pensado para tener configurado el acceso ssh mediante clave publica (Se puede hacer uso de configurarSshConexionConClavePublica.sh para configurarla)
+
+Es bastante lento en general y scriptBackupRemoto hace uso de conexion ssh a root para poder copiar cualquier archivos con sus propiedades originales
+
+Y tras cada copia en remoto recalculara todos los checksum
+
+Se modifica todas las copias de seguridad para no depender de tener que tener acceso mediante ssh al servidor.

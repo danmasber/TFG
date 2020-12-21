@@ -1,0 +1,15 @@
+# i3 config file (v4)
+# Referencia completa en http://i3wm.org/docs/userguide.html
+
+#Indica que la tecla Win sera usado como modificador
+set $mod Mod4
+
+#Indica la fuente usada 
+font pango:monospace 8
+
+# Atajo de teclado para cerrar la ventana actual
+bindsym $mod+Shift+q kill
+# Atajo de teclado para refrestar la interfaz i3
+bindsym $mod+Shift+r restart
+# Atajo de para salir de la interfaz i3, se mostrara un mensaje de confirmacion
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Presionate la combianacion de tecla para salir de i3. ¿Esta seguro? Entonces cerrara la sesion X.' -b 'Si,salir de i3' 'i3-msg exit'"

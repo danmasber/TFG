@@ -1,0 +1,28 @@
+El fichero mapeoDHCPcompleto.pl junto a la invocacion con un solo argumento que sea la ruta de un fichero de configuracion de un servidor dhcp valido dara como resultado un fichero cuyo nombre se especifica en la funcion nombreFicheroSalida(), este fichero contendra los comandos o parte de la configuracion (dependiendo del valor puesto en la funcion modoFicheroSalida) que nos permitira configurar todo lo relaciona con el servidor dhcp para el router HP 2620-25 o 2650-25 y modelos compatibles
+
+Hay que ejecutarlo con LC_ALL=C ./mapeoDHCPcompleto.pl archivoConfiguracionDHCP
+
+
+Como configuracion adicional necesaria seria necesario crear las vlan que contrendra el rango de puesto y alguna de la ip que son puerta de enlace predeterminda de cada subred. Esto permitira delimitar donde podrá conectar cada subred y ofrecer ip dinamica correctamente
+	vlan Z
+	untagged X
+   	ip address xxx.xxx.xxx.xxx yyy.yyy.yyy.yyy
+	exit
+---
+Z un numero 1-4094
+X un numero que representa el numero del puerto separado por comas
+xxx.xxx.xxx.xxx es la IP de la puerta de enlace de la subred
+yyy.yyy.yyy.yyy es la máscara de la subred
+---
+
+Como extra en el fichero especificado en la funcion nombreFicheroSalidaRangos() se imprimirá los rangos configurado para cada subred configurada por si se desea crear otra vlan que ofrezca ip dinamica en un rango distinto del ya configurado
+
+Por ultima para configura el enrutamiento por defecto y prioridad usar(Se configurar segun esten conectada las interface con la ip xxx.xxx.xxx.xxx y las prioridades )
+
+ip route 0.0.0.0 0.0.0.0 xxx.xxx.xxx.xxx prioridad(1-255 por defecto y mayor prioridad 1)
+
+
+PD:no usar vlan 1 al ser la vlan por defecto en ninguna configuracion
+PD:para hacer uso del servicio de dhcp debe estar activo el servicio de dhcp
+enable
+dhcp-server enable

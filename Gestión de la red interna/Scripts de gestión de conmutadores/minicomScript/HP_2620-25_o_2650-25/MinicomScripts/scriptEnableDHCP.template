@@ -1,0 +1,38 @@
+main:
+	send "\n"
+	gosub enableConfiguration
+
+goto main
+
+killMinicom:
+	print
+	print "===Cerrando minicom==="
+	print	
+	#Cerramos minicom
+	! pkill -15 minicom 
+
+enableConfiguration:
+	print
+	print "===Entrado enableConfiguration==="
+	print
+	send "\n"
+	send "enable"
+	expect {
+		"Username" send "USUARIO_MANAGER" 
+		"Password" send "PASSWORD_MANAGER"
+		">" 	   send "enable"
+		"#" 	   goto enableDHCP
+		timeout 30 exit
+	}
+
+	print
+	print "===Salido enableConfiguration==="
+	print
+	return
+
+enableDHCP:
+	print "===Entrado enableDHCP==="
+	send "dhcp-server enable"	
+	send "write memory"
+	send "\n"
+	goto killMinicom

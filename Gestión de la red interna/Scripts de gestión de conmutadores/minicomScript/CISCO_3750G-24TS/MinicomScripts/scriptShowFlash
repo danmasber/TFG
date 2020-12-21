@@ -1,0 +1,25 @@
+# Debe iniciarse en modo con privilegios (hacar enable antes)
+
+send "\n"
+
+expect {
+	"(config)#" send "exit"
+	"#" goto modeEnable
+	"switch:" goto modeRescue
+}
+
+
+modeEnable:
+	send "dir flash:"
+	expect "#"
+	goto killMinicom
+
+modeRescue:
+	send "dir flash:"
+	expect "switch:"
+	goto killMinicom
+
+killMinicom:
+
+#Cerramos minicom
+! pkill -15 minicom 

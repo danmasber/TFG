@@ -1,0 +1,79 @@
+
+#!/bin/bash
+#@brief   Envía un fichero por multicast   ORIGEN(fichero) DESTINO(sessionmulticast)
+#@param   path_file      Camino completo del fichero a enviar
+#@param   str_session    Datos de sesión (Puerto:Duplex:IP:Mpbs:Nclientes:Timeout)
+
+
+PROG=$(basename "$0")
+OPENGNSYS=${OPENGNSYS:-"/opt/opengnsys"}
+OGIMG=$OPENGNSYS/images
+OGBIN=$OPENGNSYS/bin
+PATH=$PATH:$OGBIN
+REPO_IFACE="$(/opt/opengnsys/bin/getRepoIface)"
+
+# Si se solicita, mostrar ayuda.
+if [ "$*" == "help" ]; then
+    echo "Formato: $PROG fichero|nombreImagen datosMulticast [IPaAsociar]"
+    echo "Ejemplo: $PROG /opt/opengnsys/images/imagen1.pgz 9000:full-duplex:239.194.17.2:70M:20:120"
+    echo "Ejemplo: $PROG imagen1 9000:full:239.194.17.2:70M:20:120"
+    echo "Ejemplo: $PROG /opt/opengnsys/images/imagen1.pgz 9000:full-duplex:239.194.17.2:70M:20:120 172.17.2.1"
+    echo "Ejemplo: $PROG imagen1 9000:full:239.194.17.2:70M:20:120 172.17.2.1"
+    exit 0
+fi
+# Error si no se reciben 2 parámetros.
+if [ $# -le 2 ]; then
+    echo "$PROG Error: Formato: $PROG fichero|nombreImagen datosMulticast [IPaAsociar]" 
+    exit 1
+fi
+
+# Si se introdujo como argumento una interfaz a asociar se calculara la interfaz asociada a esta,
+# sino se asociara a la interfaz por defecto de Opengnsys
+if [ $# -eq 3 ]; then
+	REPO_IFACE="$(/opt/opengnsys/bin/getRepoIface $3)"
+    # De no poder calcularse se asignara a la interfaz por defecto de Opengnsys  
+    if [ "$REPO_IFACE" == "" ]; then
+       REPO_IFACE="$(/opt/opengnsys/bin/getRepoIface)"
+    fi
+else
+    REPO_IFACE="$(/opt/opengnsys/bin/getRepoIface)"
+fi
+
+
+
+# Fichero a enviar (camino completo o relativo al directorio del repositorio).
+FICH="$1"
+if [ "${FICH:0:15}" != "$OPENGNSYS" ]; then
+    FICHIMG="$OGIMG/$FICH"
+else
+    FICHIMG="$FICH"
+fi
+if [ ! -f "$FICHIMG" ]; then
+    echo "$PROG Error: Fichero \"$FICHIMG\" no accesible" 
+    exit 2
+fi
+
+# Parámetros de sesión separado por ":".
+PARAMS=$(echo "$2" | \
+	awk -F: '$1~/^[0-9]+$/ {v1=$1}
+		 tolower($2)~/^half(-duplex)?$/ {v2="--half-duplex"}
+		 tolower($2)~/^full(-duplex)?$/ {v2="--full-duplex"}
+		 $3~/^[0-9]{1,3}(\.[0-9]{1,3}){3}$/ {v3=$3}
+		 $4~/^[0-9]+[mM]$/ {v4=tolower($4)}
+		 $5~/^[0-9]+$/ {v5=$5}
+		 $6~/^[0-9]+$/ {v6=$6}
+		 END {print v1,v2,v3,v4,v5,v6}
+		')
+read -re PORTBASE METHOD ADDRESS BITRATE NCLIENTS MAXTIME <<< "$PARAMS"
+if [ -z "$MAXTIME" ]; then
+    echo "$PROG Error: Datos de sesión incorrectos: \"$2\"" 
+    exit 3
+fi
+
+# Valores estandar no configurables.
+CERROR="8x8/128"
+
+$OGBIN/udp-sender "$MBUFFER" --nokbd --retries-until-drop 65 --interface "$REPO_IFACE" --portbase "$PORTBASE" "$METHOD" --mcast-data-address "$ADDRESS" --fec "$CERROR" --max-bitrate "$BITRATE" --ttl 16 --min-clients "$NCLIENTS" --max-wait "$MAXTIME" --file "$FICHIMG"
+ 
+
+

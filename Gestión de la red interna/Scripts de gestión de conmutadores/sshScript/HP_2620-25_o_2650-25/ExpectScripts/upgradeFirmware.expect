@@ -1,0 +1,37 @@
+#!/usr/bin/expect -f
+
+# Argumentos:
+#	0 Firware
+#	1 Usuario manager del switch
+#	2 Contraseña del usuario manager
+#	3 IP del switch
+#	4 Puerto ssh del switch
+#	5 Primary o Secondary image
+
+set timeout 60
+set FIRMWARE [lindex $argv 0];
+set USUARIO_MANAGER [lindex $argv 1];
+set CONTRASENA_MANAGER [lindex $argv 2];
+set IP_SWITCH [lindex $argv 3];
+set PORT_SWITCH [lindex $argv 4];
+set IMAGEN_SELECIONADA [lindex $argv 5];
+
+spawn scp -c 3des-cbc -oPort=$PORT_SWITCH $FIRMWARE $USUARIO_MANAGER@$IP_SWITCH:os/$IMAGEN_SELECIONADA
+
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect eof
+set timeout -1 
+expect "closed by remote host."
+
+sleep 3

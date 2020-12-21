@@ -1,0 +1,18 @@
+dd if=/dev/sda of=MBR_sda.dd bs=512 count=1
+dd if=/dev/sdb of=MBR_sdb.dd bs=512 count=1
+sfdisk -d /dev/sda > sfdisk_sda 
+sfdisk -d /dev/sdb > sfdisk_sdb
+vgcfgbackup | less
+vgcfgbackup -f vgcfgbackup_centos centos
+blkid > uuids
+fsarchiver savefs -v -j2 datos /dev/mapper/centos-root 
+fsarchiver savefs -j2 -v boot /dev/md/localhost\:boot 
+mdadm -E /dev/sda1
+dd if=/dev/sda1 of=superblock_sda1.dd  bs=512 count=1 skip=8 
+dd if=/dev/sdb1 of=superblock_sdb1.dd  bs=512 count=1 skip=8 
+dd if=/dev/sdb1 of=superblock_sdb1.dd  bs=512 count=1 skip=8 
+mdadm -E /dev/sda2
+dd if=/dev/sdb2 of=superblock_sdb2.dd  bs=512 count=1 skip=8 
+dd if=/dev/sda2 of=superblock_sda2.dd  bs=512 count=1 skip=8 
+history > history_clone_0
+

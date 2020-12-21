@@ -1,0 +1,19 @@
+
+print
+print "===Iniciamos el switch==="
+print
+
+sleep 2
+send "\n"
+
+expect {
+	"Decompressing...done" break
+	"Software Image..."    break
+	"=>" 		       send "jp 1"
+}
+
+print
+print "===Cerrando minicom==="
+print
+#Cerramos minicom
+! pkill -15 minicom 

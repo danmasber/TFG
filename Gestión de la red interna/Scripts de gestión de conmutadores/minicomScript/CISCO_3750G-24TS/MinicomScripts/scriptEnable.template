@@ -1,0 +1,26 @@
+main:
+	send "\n"
+
+	expect {
+		">"	goto login
+		"#"	goto killMinicom
+		"switch:" goto killMinicom
+		timeout 30 break
+	}
+
+goto main
+
+killMinicom:
+	print ""
+	print "===Cerrando minicom==="
+	print ""
+	#Cerramos minicom
+	! pkill -15 minicom 
+
+
+login:
+	send "enable"
+	expect {
+		"Password:" send PASSWORD_MANAGER
+		"#" goto killMinicom
+	} 

@@ -1,0 +1,10 @@
+#Debe estar en modo rescue
+print "===Cambiando la velocidad a 115200 baud==="
+sleep 3
+send "\n"
+expect "=>"
+send "sp 115200"
+
+print "===Cerrando minicom==="
+#Cerramos minicom
+! pkill -15 minicom 

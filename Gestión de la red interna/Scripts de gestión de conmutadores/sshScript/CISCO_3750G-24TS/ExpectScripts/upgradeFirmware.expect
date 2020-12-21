@@ -1,0 +1,162 @@
+#!/usr/bin/expect -f
+
+# Argumentos:
+#	0 Firware
+#	1 Usuario manager del switch
+#	2 Contraseña del usuario manager
+#	3 IP del switch
+#	4 Puerto ssh del switch
+#	6 Firmaware basename
+
+set timeout 60
+set FIRMWARE [lindex $argv 0];
+set USUARIO_MANAGER [lindex $argv 1];
+set CONTRASENA_MANAGER [lindex $argv 2];
+set IP_SWITCH [lindex $argv 3];
+set PORT_SWITCH [lindex $argv 4];
+set FIRMWARE_BASENAME [lindex $argv 2];
+
+spawn ssh -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH show boot | include ^BOOT path-list
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+
+send_user "\n========= Ubicacion de la imagen actual ========="
+expect -re "flash.*"
+
+set IMAGEN $expect_out(0,string)
+
+#TODO ver como eliminar el anterior
+# Si fallará algo volveriamos  a la version inical
+
+spawn ssh -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH 
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect "*#"
+send "configure t\r"
+send "no boot boothlpr \r"
+send "no boot system \r"
+send "exit\r"
+send "delete $IMAGEN \r"
+send "\n"
+send "\n"
+send "logout\r"
+
+expect {
+	"*yes/no*" {
+	 	send "yes\r"
+	 	expect "*confirm*" 
+		send "\n"
+	}
+	"*confirm*" {
+		send "\n"
+	} 	
+}
+
+set timeout -1
+spawn scp -oPort=$PORT_SWITCH $FIRMWARE $USUARIO_MANAGER@$IP_SWITCH:flash:/$FIRMWARE
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect {
+	"*Not enough space on device " {
+		send_user "\n========= No habia espacio hay que volvemos a la version anterior  ========="
+		spawn ssh -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH 
+
+		expect {
+			"yes/no" {
+		           send "yes\r"
+		           expect "*assword" { 
+		           	send "$CONTRASENA_MANAGER\r" 
+		       	   } 
+		   	}
+			"*assword" { 
+				send "$CONTRASENA_MANAGER\r" 
+			}
+		}
+		expect "*#"
+		send "configure t\r"
+		send "boot boothlpr $IMAGEN \r"
+		send "boot system $IMAGEN \r"
+		send "do reload\r"
+
+		expect {
+			"*yes/no*" {
+			 	send "yes\r"
+			 	expect "*confirm*" 
+				send "\n"
+			}
+			"*confirm*" {
+				send "\n"
+			} 	
+		}
+
+		exit 1
+		
+	}
+}
+
+set timeout -1
+spawn echo 'fin transferencia'
+expect 'fin transferencia'
+
+set timeout 10
+spawn ssh -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH 
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect "*#"
+
+send "configure t\r"
+send "boot boothlpr flash:/$FIRMWARE_BASENAME\r"
+send "boot system flash:/$FIRMWARE_BASENAME\r"
+send "do reload\r"
+
+expect {
+	"*yes/no*" {
+	 	send "yes\r"
+	 	expect "*confirm*" 
+		send "\n"
+	}
+	"*confirm*" {
+		send "\n"
+	} 	
+}
+expect eof

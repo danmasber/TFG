@@ -1,0 +1,15 @@
+# Debe estar iniciando el switch en modo Rescue
+
+print "===Selecciona el modo rescue==="
+expect {
+	"Select profile" 	send "0" 
+	"=>" 			break
+	timeout 60 	exit
+}
+
+sleep 2
+#Cerramos minicom
+print
+print "===Cerrando minicom==="
+print
+! pkill -15 minicom 

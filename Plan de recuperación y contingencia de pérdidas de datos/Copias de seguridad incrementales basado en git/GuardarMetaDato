@@ -1,0 +1,9 @@
+Es necesario usar para poder hacer commit guardar los cambios
+https://github.com/danny0838/git-store-meta
+
+ export GIT_SSL_NO_VERIFY=1
+ git clone https://github.com/danny0838/git-store-meta
+ cd git-store-meta/
+ cp git-store-meta.pl /bin/
+
+

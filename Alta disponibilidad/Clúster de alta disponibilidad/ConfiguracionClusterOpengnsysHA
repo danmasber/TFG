@@ -1,0 +1,323 @@
+### Crear ip virtual
+pcs resource create PublicaIP ocf:heartbeat:IPaddr2  
+        ip="192.168.1.200" cidr_netmask="24" nic="enp4s0" 
+        clusterip_hash="sourceip-sourceport"    
+        flush_routes="true" 
+        arp_sender="iputils_arping" op monitor interval="10s"
+
+Debe estar instalado arping
+Debian
+    apt -y install arping
+Centos 
+    yum -y install arping 
+
+
+
+############ Creamos rescursos  ############
+
+### Crear recurso para DHCP 
+   pcs resource create DHCP ocf:heartbeat:dhcpd \
+    config="/etc/dhcp/dhcpd.conf" \
+    binary="/usr/sbin/dhcpd" \
+    user="root" \
+    op start interval="0" timeout="60" \
+    op stop interval="0" timeout="60" \
+    op monitor interval="10s"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DHCP
+    pcs resource meta DHCP migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DHCP prefers  servidor1=1000 servidor2=0 
+
+
+### Crear recurso para TFTP 
+    pcs resource create TFTP service:tftpd-hpa \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="10s"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio TFTP
+    pcs resource meta TFTP migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location TFTP prefers  servidor1=1000 servidor2=0 
+
+### Crear recurso para BBDD, 
+    pcs resource create BBDD  service:mariadb \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="10s"
+
+#   Se debe editar los ficheros de opengnsys
+#        /opt/opengnsys/etc/ el campo datasource para que la base de dato apunte a la ip flotante
+#        /opt/opengnsys/www/controlacceso el campo localhost para que la base de dato apunte a la ip flotante
+#    Editar la configuracion de mariadb /etc/mysql/mariadb.conf.d/50-server.cnf
+#        bind-address            = 0.0.0.0
+#    Añadir a la bbdd el accesos desde los servidores(El usuarioOgAdmBD sera el usuario de acceso a mysql consultable desde la pantalla de gestion de usuario y contrasenaUsuarioOgAdmBD sera su contraseña)
+#    (Cambiando la IpSevidor por las ip de los servidores y se puede hacer uso de expresiones como 192.168.1.20%)
+#        GRANT ALL ON ogAdmBD.* to 'usuarioOgAdmBD'@'IpSevidor' IDENTIFIED BY 'contrasenaUsuarioOgAdmBD' WITH GRANT OPTION;
+#        flush privileges;
+#    Si se cambia la contraseña habra que repetir el proceso
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio BBDD
+    pcs resource meta BBDD migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location BBDD prefers  servidor1=1000 servidor2=0 
+
+### Crear recurso para el grupo de opengnsys 
+
+    pcs resource create Rsync service:rsync.service\
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="10s"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DHCP
+    pcs resource meta Rsync migration-threshold=4 failure-timeout=60        
+    
+    pcs resource create Samba service:smbd \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="10s"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DHCP
+    pcs resource meta Samba migration-threshold=4 failure-timeout=60
+
+    pcs resource create Samba-NMBD service:nmbd \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="10s"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DHCP
+    pcs resource meta Samba-NMBD migration-threshold=4 failure-timeout=60
+
+    pcs resource create Apache ocf:heartbeat:apache  \
+      configfile=/etc/apache2/apache2.conf \
+      httpd=/usr/sbin/apache2 \
+      statusurl="http://localhost/server-status" \
+      op monitor interval="10s"    
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DHCP
+    pcs resource meta Apache migration-threshold=4 failure-timeout=60
+
+    pcs resource create Opengnsys lsb:opengnsys \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="10s"  
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DHCP
+    pcs resource meta Opengnsys migration-threshold=4 failure-timeout=60
+############ Creamos redirecionamientos  ############
+
+### El recurso con el redireccionamiento del puerto 3306
+    pcs resource create iptablesBBDD  ocf:heartbeat:anything  binfile="/opt/scriptHA/scriptReglaIptables.sh" \
+        cmdline_options="-p '3306/tcp' -r BBDD"  \
+        logfile=/opt/scriptHA/logs/iptablesBBDD \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="30" timeout="60" 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio iptablesBBDD
+    pcs resource meta iptablesBBDD migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 2
+    pcs constraint location iptablesBBDD prefers  servidor2=1000 servidor1=0 
+
+
+
+### El recurso con el redireccionamiento del puerto 69
+    pcs resource create iptablesTFTP  ocf:heartbeat:anything  binfile="/opt/scriptHA/scriptReglaIptables.sh" \
+        cmdline_options="-p '69/udp' -r TFTP"  \
+        logfile=/opt/scriptHA/logs/iptablesTFTP \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="30" timeout="60" 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio iptablesTFTP
+    pcs resource meta iptablesTFTP migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 2
+    pcs constraint location iptablesTFTP prefers  servidor2=1000 servidor1=0 
+
+
+### El recurso con el redireccionamiento del puerto 67,68
+    pcs resource create iptablesDHCP  ocf:heartbeat:anything  binfile="/opt/scriptHA/scriptReglaIptables.sh" \
+        cmdline_options="-p '67:68/udp' -r DHCP"  \
+        logfile=/opt/scriptHA/logs/iptablesDHCP \
+        op start interval="0" timeout="60" \
+        op stop interval="0" timeout="60" \
+        op monitor interval="30" timeout="60" 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio iptablesDHCP
+    pcs resource meta iptablesDHCP migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 2
+    pcs constraint location iptablesDHCP prefers  servidor2=1000 servidor1=0 
+
+
+
+############ Indicamos que recursos con lo cuales tendra que estar en nodo apuesto ############
+
+### Colocamos el resource BBDD en el nodo opuesto de iptablesBBDD
+ pcs constraint colocation add iptablesBBDD with BBDD  score=-INFINITY
+
+### Colocamos el resource TFTP en el nodo opuesto de iptablesTFTP
+ pcs constraint colocation add iptablesTFTP with TFTP  score=-INFINITY
+ 
+### Colocamos el resource DHCP en el nodo opuesto de iptablesDHCP
+ pcs constraint colocation add iptablesDHCP with DHCP  score=-INFINITY
+
+
+############# Creamos los recurso para administrar los disco y su montaje #############
+
+
+pcs resource create DrbdImagenes ocf:linbit:drbd drbd_resource=imagenes \
+    promotable promoted-max=1 promoted-node-max=1 \
+    clone-max=2 clone-node-max=1 notify=true
+
+pcs resource create  DrbdImagenesFS ocf:heartbeat:Filesystem device="/dev/drbd1" \
+    directory="/opt/opengnsys/images" fstype="ext3"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdImagenes
+    pcs resource meta DrbdImagenes migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdImagenes-clone prefers  servidor1=1000 servidor2=0 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdImagenesFS
+    pcs resource meta DrbdImagenesFS migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdImagenesFS prefers  servidor1=1000 servidor2=0 
+
+
+pcs resource create DrbdTFTP ocf:linbit:drbd drbd_resource=tftp \
+    promotable promoted-max=1 promoted-node-max=1 \
+    clone-max=2 clone-node-max=1 notify=true
+
+pcs resource create  DrbdTFTPFS ocf:heartbeat:Filesystem device="/dev/drbd3" \
+    directory="/srv/tftp/" fstype="ext3"
+
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdTFTP
+    pcs resource meta DrbdTFTP migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdTFTP-clone prefers  servidor1=1000 servidor2=0 
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdTFTPFS
+    pcs resource meta DrbdTFTPFS migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdTFTPFS prefers  servidor1=1000 servidor2=0 
+
+pcs resource create DrbdBbdd ocf:linbit:drbd drbd_resource=basedatos \
+    promotable promoted-max=1 promoted-node-max=1 \
+    clone-max=2 clone-node-max=1 notify=true
+
+pcs resource create  DrbdBbddFS ocf:heartbeat:Filesystem device="/dev/drbd2" \
+    directory="/var/lib/mysql/" fstype="ext3"
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdBbdd
+    pcs resource meta DrbdBbdd migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdBbdd-clone prefers  servidor1=1000 servidor2=0 
+
+
+### Indicamos que tras 4 fallo movemos de nodo el servicio DrbdBbddFS
+    pcs resource meta DrbdBbddFS migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location DrbdBbddFS prefers  servidor1=1000 servidor2=0 
+
+############ Creamos el grupos ############
+
+### Creamos el grupo de OPENGNSYSgrupo 
+pcs resource group add OPENGNSYSgrupo PublicaIP Apache Opengnsys Samba-NMBD Samba Samba-NMBD Rsync  DrbdImagenesFS
+
+### Indicamos que tras 4 fallo movemos de nodo el grupo OPENGNSYSgrupo
+    pcs resource meta OPENGNSYSgrupo migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location OPENGNSYSgrupo prefers  servidor1=1000 servidor2=0     
+    pcs constraint colocation add OPENGNSYSgrupo with DrbdImagenes-clone INFINITY with-rsc-role=Master
+    pcs constraint order promote DrbdImagenes-clone then start  OPENGNSYSgrupo 
+
+### Creamos el grupo de TFTP 
+pcs resource group add TFTPgrupo DrbdTFTPFS TFTP 
+
+### Indicamos que tras 4 fallo movemos de nodo el grupo TFTPgrupo
+    pcs resource meta TFTPgrupo migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location TFTPgrupo prefers  servidor1=1000 servidor2=0     
+    pcs constraint colocation add TFTPgrupo with DrbdTFTP-clone INFINITY with-rsc-role=Master
+    pcs constraint order promote DrbdTFTP-clone then start  TFTPgrupo 
+
+### Creamos el grupo de BBDDgrupo 
+pcs resource group add BBDDgrupo DrbdBbddFS BBDD 
+
+### Indicamos que tras 4 fallo movemos de nodo el grupo BBDDgrupo
+    pcs resource meta BBDDgrupo migration-threshold=4 failure-timeout=60
+
+### Inidicamos que preferimos que se ejecute en el servidor 1
+    pcs constraint location BBDDgrupo prefers  servidor1=1000 servidor2=0     
+    pcs constraint colocation add BBDDgrupo with DrbdBbdd-clone INFINITY with-rsc-role=Master
+    pcs constraint order promote DrbdBbdd-clone then start  BBDDgrupo 
+
+
+############ Indicamos que recursos preferimos que este activo  ############
+############ Arrancar por prioridad
+
+pcs resource meta DrbdImagenes priority=1000
+pcs resource meta DrbdTFTP priority=1000
+pcs resource meta DrbdBbdd priority=1000
+
+pcs resource meta OPENGNSYS priority=100
+pcs resource meta BBDDgrupo priority=100
+pcs resource meta TFTPgrupo priority=100
+
+pcs resource meta iptablesMysql priority=1
+pcs resource meta iptablesTFTP priority=1
+pcs resource meta iptablesDHCP priority=1
+
+
+############ Se deben sincroniza los apiToken de los ficheros   ############
+etc/ogAdmServer.cfg
+etc/ogAdmRepo.cfg
+
+############ Deshabiliatar todos los servicios  ############
+Sobre todo especial cuidado con la dependencia de activacion de mysql al activar opengnsys 
+
+eval update-rc.d \$service defaults
+eval update-rc.d \$service disable
+
+
+############ Habilitar reenvio  ############
+
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+sysctl -p
+
+
+############ Habilitar y seguimiento  ############
+//TODO por revisar tanto TFTP como el resto de los servicios
+sysctl net/netfilter/nf_conntrack_helper=1
+modprobe nf_conntrack_tftp
+modprobe nf_nat_tftp
+
+echo nf_conntrack_tftp > /etc/modules-load.d/nf_conntrack_tftp.conf
+echo nf_nat_tftp > /etc/modules-load.d/nf_nat_tftp.conf
+
+
+ 
+
+Script scriptReglaIptables.sh
+Este script crea reglas de iptables que hará se rediriga el trafico de los puertos especificado hacia el nodo donde se encuentra alojado el recurso del cluster KVM HA actualmente para poder hacer al recurso a través de la IP de cualquier nodo al recurso que se desea 
+Esta pensado para hacer uso del recurso  ocf:heartbeat:anything en un cluster KVM HA para llamar a este script
+    echo "1" > /proc/sys/net/ipv4/ip_forward
+
+Script scriptReiniciarNodo.sh
+Se programara su lanzamiento con cron y lo que se encarga de verificar si el nodo donde se ejecuta no esta corriendo alguno de los recursos critico o si el nuemero de recursos especificado es menor al deseado. Si esto no se cumple reiniciaria el nodo para intentar que este se recupere tras el reinicio 
+

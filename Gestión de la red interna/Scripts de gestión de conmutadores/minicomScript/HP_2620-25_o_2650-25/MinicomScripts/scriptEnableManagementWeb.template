@@ -1,0 +1,38 @@
+main:
+	send "\n"
+	gosub enableConfiguration
+
+goto main
+
+killMinicom:
+	print
+	print "===Cerrando minicom==="
+	print	
+	#Cerramos minicom
+	! pkill -15 minicom 
+
+enablePrivilige:
+	print
+	print "===Entrado enablePrivilige==="
+	print
+	send "\n"
+	send "enable"
+	expect {
+		"Username" send "USUARIO_MANAGER" 
+		"Password" send "PASSWORD_MANAGER"
+		">" 	   send "enable"
+		"#" 	   goto enableManagementWeb
+		timeout 30 exit
+	}
+
+	print
+	print "===Salido enablePrivilige==="
+	print
+	return
+
+enableManagementWeb:
+	print "===Entrado enableManagementWeb==="
+	send "web-management"	
+	send "write memory"
+	send "\n"
+	goto killMinicom

@@ -1,0 +1,28 @@
+dd if=MBR_sda.dd of=/dev/sda 
+dd if=MBR_sdb.dd of=/dev/sdb 
+sfdisk /dev/sda < sfdisk_sda 
+sfdisk /dev/sdb < sfdisk_sdb
+dd seek=8 if=superblock_sda1.dd of=/dev/sda1 bs=512
+dd seek=8 if=superblock_sda2.dd of=/dev/sda2 bs=512
+dd seek=8 if=superblock_sdb2.dd of=/dev/sdb2 bs=512
+dd seek=8 if=superblock_sdb1.dd of=/dev/sdb1 bs=512
+mdadm -S --scan
+mdadm -A --scan
+fsarchiver -j2 -v boot.fsa id=0,dest=/dev/md/localhost\:boot 
+fsarchiver -j2 -v restfs boot.fsa id=0,dest=/dev/md/localhost\:boot 
+ pvcreate-u "Li25y1-uux1-b62M-ru0M-7AOe-cYjO-zK2fgs" --restorefile vgcfgbackup_centos /dev/md126
+vgcfgrestore -f vgcfgbackup_centos centos
+vgchange -a y
+fsarchiver -j2 -v restfs datos.fsa id=0,dest=/dev/mapper/centos-root 
+mkswap -U "8acccaa8-b843-4f90-8c49-f73537c049b2" /dev/mapper/centos-swap 
+### Para insatalarlo correctamente
+mkdir datos
+mount /dev/mapper/centos-root datos/
+mount /dev/md/localhost\:boot datos/boot/
+mount --bind /dev/ datos/dev
+mount --bind /proc/ datos/proc
+chroot datos/
+su - 
+mdadm -A --scan 
+vgchange -a y
+grub2-install /dev/sda

@@ -1,0 +1,25 @@
+
+sleep 2
+send "\n"
+
+expect {
+	"=>"
+	timeout 60 break
+}
+
+send "\n"
+
+print
+print "===Iniciamos la descarga del firmware==="
+print
+send "do"
+
+expect "Do you wish to continue? (Y/N)>"
+send "Y"
+
+print
+print "===Cerrando minicom==="
+print
+
+#Cerramos minicom
+! pkill -15 minicom 

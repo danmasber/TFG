@@ -1,0 +1,56 @@
+--------------- Problema ---------------
+Existe dos problemas 
+- Que se formatea la cache con ext4 y si la imagen tiene el kernel 5.0.0
+Para usarlo con otra vesion hay que deshabilitar todas las  carateristicar ext4 de la cache /dev/sda4
+#Deshabilitar metadata_csum
+	umount /dev/sda4
+	fsck -y /dev/sda4
+	tune2fs -O ^metadata_crc /dev/sda4
+#Deshabilitar 64bit
+	umount /dev/sda4
+	tune2fs -O ^64bit /dev/sda4
+	e2fsck -f /dev/sda4
+	resize2fs -s /dev/sda4
+
+
+
+- No arranca el menu cliente dando fallo en $OPENGNSYS/bin/browser -qws $OGMENU, porque no encuentra el menu debido a que se ejecuta correctamente en al iniciar ogPostConfigureFS 
+El problema es que el cliente no tiene creada la carpeta /opt/opengnsys/cache,log,images en la imagen de ogLive
+Esto ocurre desde en las versiones 
+	ogLive-bionic-5.0.0-27-generic-amd64-r20190830.7208cc9
+	ogLive-bionic-5.4.0-40-generic-amd64-r20200629.85eceaf	
+
+
+--------------- Solucion  ---------------
+Nos descargamos las herramientos necesaria con 
+svn export https://opengnsys.es/svn/trunk/client/boot-tools/
+
+Usamos ogclientSqfs2Img para generar el img apartir  de /opt/opengnsys/tftpboot/ogclient/ogclient.sqfs. 
+Montamos el ogclient mount ogclient.img ogclientmount -o loop,offset=32256
+Entramos en /opt/opengnsys/tftpboot/ogclient/ogclientmount/opt/opengnsys/ y cremos la carpeta cache,log,images
+o 
+mkdir /opt/opengnsys/tftpboot/ogclient/ogclientmount/opt/opengnsys/log
+mkdir /opt/opengnsys/tftpboot/ogclient/ogclientmount/opt/opengnsys/images
+mkdir /opt/opengnsys/tftpboot/ogclient/ogclientmount/opt/opengnsys/cache
+
+Esto es un problema de los cliente comprimido ogclient.sqfs 
+
+Usar ogclientImg2Sqfs para generar el sqfs 
+
+Usar installOfflineMode para instalar de nuevo el sqfs corregido en cache
+
+------------------ Info ------------
+Parametros para la plantilla de arranque 
+https://opengnsys.es/trac/wiki/InitrdClienteSecondFileSystem
+
+Como configura la cache en local 
+https://opengnsys.es/trac/wiki/DocumentacionUsuario1.0.6/Offline#Paraprepararelclienteenmodolocal
+
+Como crear menu personalizado(Util porque la cache solo permite un html como menu en /menus/IP_PC.html)
+https://opengnsys.es/trac/wiki/DocumentacionUsuario1.1.0/MenuPersonalizado
+
+Ejemplo de llamada a script desde menu personalizado con confirmacion
+  <p><a href="commandwithconfirmation:/opt/opengnsys/scripts/restoreImage CACHE monolitica 1 1">Restarar desde cache</a></p>
+
+
+

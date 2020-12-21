@@ -1,0 +1,13 @@
+[Unit]
+Description=Lanzadera de maquina virtual
+Before=vmware.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/xinit "/opt/servicioMaquina/lanzarMaquina.sh" -- :1
+ExecReload=/usr/bin/xinit "/opt/servicioMaquina/lanzarMaquina.sh" -- :1
+Restart=always
+
+[Install]
+WantedBy=vmware.service
+WantedBy=graphical.target

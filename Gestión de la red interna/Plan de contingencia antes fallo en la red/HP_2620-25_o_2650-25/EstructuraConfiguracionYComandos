@@ -1,0 +1,88 @@
+
+Arquitectura de la configuracion del switch
+
+El enrutamiento caido
+•  Sub red A
+	Vlan 2  
+	- IP 172.16.17.125 	
+	Puerto 1-2
+• Sub red B
+	Vlan 3 
+	- IP 172.16.17.253 
+	Puerto 3-4 
+
+El enrutamiento y dhcp caido
+•  Sub red A
+	Vlan 4  
+	- IP 172.16.17.126
+	Puerto 5-6
+•  Sub red B
+	Vlan 5 
+	- IP 172.16.17.254 
+	Puerto 7-8 
+
+Puertos de salida 
+•  Salida AP
+	Vlan 6 
+	- Ip una en el rango de ait.us.es(193.147.162.163)
+	Puerto 21-22
+•  Salida AP
+	Vlan 7 
+	- Ip en modo cliente dhcp 
+ 	Puerto 2-24
+
+Las rutas a crear serán
+0.0.0.0/0 hacia IP_puerta_enlace_ait.us.es metrica 1
+0.0.0.0/0 hacia IP_puerta_enlace_AP metrica 2
+
+
+
+Comandos:
+*************Existe problema de solapamiento pero no necesitamos desactivar dhcp
+• Cremos la vlan 2 - 7 y configuramos los interfaces
+	vlan 2 
+		ip address 172.16.17.125  255.255.255.128
+		untagged 1,2
+		exit 
+	vlan 3
+		ip address 172.16.17.253  255.255.255.128
+		untagged 3,4
+		exit
+	vlan 4 
+		ip address 172.16.17.126  255.255.255.128
+		untagged 5,6
+		dhcp-server
+		exit 
+	vlan 5 
+		ip address 172.16.17.254  255.255.255.128
+		untagged 7,8
+		dhcp-server
+		exit
+	vlan 6 
+		untagged 21,22
+		ip address dhcp
+		exit
+	vlan 7 
+		untagged 23,24
+		ip address 193.147.162.163 255.255.255.0
+		exit
+
+
+• Configuramos la ruta por defectos(aunque tengamos dos al solo estar una conectada solo estara habilitada una)
+
+	ip route 0.0.0.0 0.0.0.0 IP_puerta_enlace_ait.us.es metric 1
+	ip route 0.0.0.0 0.0.0.0 IP_puerta_enlace_AP metric 2
+
+• Activamos el enrutamiento entre vlans
+	ip routing
+
+• Activamos el enrutamiento nat(No disponible)
+
+PD:no usar vlan 1 al ser la vlan por defecto en ninguna configuracion
+PD:para hacer uso del servicio de dhcp debe estar activo el servicio de dhcp
+
+	enable
+	configure
+	dhcp-server enable
+
+PD: Cambiar exit por ! para incluir en el archivo de configuracion

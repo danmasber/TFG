@@ -1,0 +1,18 @@
+# Debe iniciarse en modo con privilegios (hacar enable antes)
+
+send "\n"
+
+expect {
+	"(config)#" send "exit"
+	"#" break
+	"switch:" goto killMinicom
+}
+
+send "show boot"
+
+expect "#"
+
+killMinicom:
+
+#Cerramos minicom
+! pkill -15 minicom 

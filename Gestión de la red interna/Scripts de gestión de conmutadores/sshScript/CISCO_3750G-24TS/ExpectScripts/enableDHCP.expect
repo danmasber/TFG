@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+# Argumentos:
+#	0 Usuario manager del switch
+#	1 Contraseña del usuario manager
+#	2 IP del switch
+#	3 Puerto ssh del switch
+
+set USUARIO_MANAGER [lindex $argv 0];
+set CONTRASENA_MANAGER [lindex $argv 1];
+set IP_SWITCH [lindex $argv 2];
+set PORT_SWITCH [lindex $argv 3];
+
+
+spawn ssh -oPort=$PORT_SWITCH $USUARIO_MANAGER@$IP_SWITCH 
+
+expect {
+	"yes/no" {
+           send "yes\r"
+           expect "*assword" { 
+           	send "$CONTRASENA_MANAGER\r" 
+       	   } 
+   	}
+	"*assword" { 
+		send "$CONTRASENA_MANAGER\r" 
+	}
+}
+expect "*#"
+send "configure t\r"
+send "no service dhcp\r"
+send "do copy running-config startup-config \r"
+expect "*Destination filename [startup-config]?"
+
+send "\n"
+expect "*#"
+send "logout\r"
+
+

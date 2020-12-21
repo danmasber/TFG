@@ -1,0 +1,12 @@
+
+Tras introducir el archivo en la carpeta correspodiente ejecutar el script correspondiente al sistema operativo
+
+Sistemas operativos -------	Fichero OGAgent -----> Carpeta donde colocar
+Ubuntu, Debian y derivados	ogagent_Version_all.deb -----> debian_ubuntu_derivados
+Red Hat, Fedora y derivados	ogagent-Version.noarch.rpm -----> redHat_fedora_derivados
+SuSE y OpenSuSE	ogagent-opensuse-Version.noarch.rpm -----> suse_opensuse
+MS-Windows	OGAgentSetup-Version.exe -----> windows
+macOS X	OGAgentInstaller-Version.pkg -----> macos
+
+Para la version 1.1.1b y posteriores 
+MS-Windows	OGAgentSetup-Version.exe -----> windows1.1.1b y posterior

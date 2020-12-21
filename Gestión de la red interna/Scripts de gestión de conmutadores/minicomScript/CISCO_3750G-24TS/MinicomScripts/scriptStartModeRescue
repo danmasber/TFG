@@ -1,0 +1,27 @@
+# Debe iniciarse en modo con privilegios (hacar enable antes)
+
+send "\n"
+expect {
+	"#" goto startRescue
+	"switch:" goto killMinicom
+	}
+
+startRescue:
+	send "configure terminal"
+	send "boot manual"
+	send "do reload"
+
+	expect {
+		"System configuration has been modified." send "no"
+		"Proceed with reload" break
+	}
+	send "\n"
+	goto killMinicom
+
+
+killMinicom:
+print ""
+print "===Cerrando minicom==="
+print ""
+#Cerramos minicom
+! pkill -15 minicom 

@@ -1,0 +1,17 @@
+Autoexec se trata de un procedimiento que puede se configurado a nivel de equipo  que se ejecuta cada vez que se inicia el cliente ogLive
+Debido a lo que se quiere es copiar ficheros puntuales se crear un procedimiento que incluira la ejecucion de script donde se relizara la copia del un fichero determinado
+	ogCopyFile REPO path_source  int_ndisk int_npart path_target
+
+Los ficheros se deberan ubicar el la ruta /opt/opengnsys/images/ en el servidor
+Cuando se inicia el cliente ogLive la ruta  /opt/opengnsys/images/ es montado en el mismo punto en el cliente mediante samba.
+
+Los argumentos varibles seran 
+	- path_source indica la ruta del fichero a copiar que se ubica en /opt/opengnsys/images/
+	- int_ndisk indica numero del disco 
+	- int_npart indica el numero de la particion
+	- path_target indica la ruta destino
+
+En caso path_source de se indique un directorio si no se indicar / se copiara la carpeta en el destino. Si se indica / se copiara el contenido en el destino
+
+Con el siguiente comando logearemos un mensaje en log y en la session mientras el ejecuta el procedimiento
+ogEcho log session "Copiado fichero"

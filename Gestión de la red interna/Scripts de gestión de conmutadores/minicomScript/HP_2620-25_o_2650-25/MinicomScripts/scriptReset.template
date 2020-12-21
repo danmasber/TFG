@@ -1,0 +1,77 @@
+main:
+
+send "\n"
+#Comprobas si estamos en moda rescue para reiniciar
+expect {
+	"=>" goto resetRescue
+	timeout 3 break
+}
+
+gosub login
+
+gosub updateNormal
+
+goto main
+
+killMinicom:
+	print ""
+	print "===Cerrando minicom==="
+	print ""
+	#Cerramos minicom
+	! pkill -15 minicom 
+
+resetRescue:
+	print
+	print "===Entrado resetRescue==="
+	print
+	# Iniciamos en la primera particion
+	send "boot"  
+	goto killMinicom
+
+login:	
+	print
+	print "===Entrado login==="
+	print
+	send "\n"
+	expect {
+		"Username"	send "USUARIO_MANAGER" 
+		"Password"	send "PASSWORD_MANAGER"
+		">" 		break
+		"#" 		goto updateNormal
+		timeout 60 	exit
+	}
+
+	print
+	print "===Salido login==="
+	print
+	return 
+
+enableUpdate:
+	print
+	print "===Entrado enableUpdate==="
+	print
+	send "enable"
+	expect {
+		"Username" send "USUARIO_MANAGER" 
+		"Password" send "PASSWORD_MANAGER"
+		">" 	   break
+		"#" 	   goto updateNormal
+		timeout 30 exit
+	}
+
+	print
+	print "===Salido enableUpdate==="
+	print
+	return
+
+updateNormal:
+	print "===Entrado updateNormal==="
+	send "\n"
+	expect {
+		">" 			goto enableUpdate  
+		"#" 			send "update"
+		"y/n"		 	break
+		timeout 	30 	break
+	}
+	send "Y"
+	goto killMinicom
